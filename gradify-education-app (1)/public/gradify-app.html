@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#B91C1C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gradify">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiR3JhZGlmeSIsInNob3J0X25hbWUiOiJHcmFkaWZ5IiwiZGVzY3JpcHRpb24iOiJHZXN0acOzbiBkZWwgcHJvY2VzbyBkZSBncmFkbyB1bml2ZXJzaXRhcmlvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNGRkZGRkYiLCJ0aGVtZV9jb2xvciI6IiNCOTFDMUMifQ==">
+  <title>Gradify - Gestion de Grado</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #B91C1C;
+      --primary-dark: #991B1B;
+      --primary-light: #FEE2E2;
+      --success: #16A34A;
+      --success-light: #DCFCE7;
+      --warning: #CA8A04;
+      --warning-light: #FEF9C3;
+      --info: #2563EB;
+      --info-light: #DBEAFE;
+      --bg: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --text: #111827;
+      --text-muted: #6B7280;
+      --border: #E5E7EB;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-lg: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 430px; margin: 0 auto; background: var(--bg); }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 16px 20px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .header-icon { width: 28px; height: 28px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .header-icon svg { width: 18px; height: 18px; color: var(--primary); }
+    .header-actions { display: flex; gap: 12px; }
+    .header-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .header-btn svg { width: 20px; height: 20px; color: white; }
+    .badge { position: absolute; top: -2px; right: -2px; background: #FBBF24; color: var(--text); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    
+    /* Content */
+    .content { flex: 1; padding: 20px; padding-bottom: 100px; overflow-y: auto; }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .nav-item.active { color: var(--primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item span { font-size: 11px; font-weight: 500; }
+    
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    
+    /* Progress */
+    .progress-ring { display: flex; align-items: center; gap: 16px; }
+    .progress-circle { width: 80px; height: 80px; position: relative; }
+    .progress-circle svg { transform: rotate(-90deg); }
+    .progress-circle circle { fill: none; stroke-width: 8; }
+    .progress-circle .bg { stroke: var(--border); }
+    .progress-circle .fill { stroke: var(--primary); stroke-linecap: round; transition: stroke-dashoffset 0.5s; }
+    .progress-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--primary); }
+    .progress-info h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .progress-info p { font-size: 13px; color: var(--text-muted); }
+    
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: var(--bg-secondary); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-card.success { background: var(--success-light); }
+    .stat-card.warning { background: var(--warning-light); }
+    .stat-card.info { background: var(--info-light); }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-card.success .stat-value { color: var(--success); }
+    .stat-card.warning .stat-value { color: var(--warning); }
+    .stat-card.info .stat-value { color: var(--info); }
+    .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    
+    /* List Items */
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .list-item:hover { background: var(--border); }
+    .list-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .list-icon.success { background: var(--success-light); color: var(--success); }
+    .list-icon.warning { background: var(--warning-light); color: var(--warning); }
+    .list-icon.info { background: var(--info-light); color: var(--info); }
+    .list-icon.primary { background: var(--primary-light); color: var(--primary); }
+    .list-icon svg { width: 20px; height: 20px; }
+    .list-content { flex: 1; min-width: 0; }
+    .list-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .list-subtitle { font-size: 12px; color: var(--text-muted); }
+    .list-meta { font-size: 11px; color: var(--text-muted); }
+    
+    /* Status Badge */
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .status-badge.success { background: var(--success-light); color: var(--success); }
+    .status-badge.warning { background: var(--warning-light); color: var(--warning); }
+    .status-badge.info { background: var(--info-light); color: var(--info); }
+    
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 8px 16px; font-size: 12px; }
+    .btn-block { width: 100%; }
+    
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.2s;
+      background: var(--bg);
+    }
+    .form-input:focus { outline: none; border-color: var(--primary); }
+    
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab.active { background: var(--primary); color: white; }
+    
+    /* Login */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 50%, var(--bg) 50%);
+    }
+    .login-header { padding: 60px 20px 40px; text-align: center; color: white; }
+    .login-logo { width: 80px; height: 80px; background: white; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg); }
+    .login-logo svg { width: 50px; height: 50px; color: var(--primary); }
+    .login-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .login-header p { font-size: 14px; opacity: 0.9; }
+    .login-form { flex: 1; background: white; border-radius: 32px 32px 0 0; padding: 32px 24px; margin-top: -20px; }
+    .login-tabs { display: flex; background: var(--bg-secondary); border-radius: 12px; padding: 4px; margin-bottom: 24px; }
+    .login-tab { flex: 1; padding: 12px; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 10px; transition: all 0.2s; }
+    .login-tab.active { background: white; color: var(--primary); box-shadow: var(--shadow); }
+    
+    /* Section Title */
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+    .section-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+    .upload-area:hover { border-color: var(--primary); background: var(--primary-light); }
+    .upload-area svg { width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px; }
+    .upload-area p { font-size: 14px; color: var(--text-muted); }
+    .upload-area span { color: var(--primary); font-weight: 600; }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal {
+      background: white;
+      border-radius: 24px 24px 0 0;
+      padding: 24px;
+      width: 100%;
+      max-width: 430px;
+      max-height: 80vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s;
+    }
+    .modal-overlay.active .modal { transform: translateY(0); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 18px; font-weight: 700; }
+    .modal-close { background: var(--bg-secondary); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    /* Notification */
+    .notification {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid;
+    }
+    .notification.success { border-color: var(--success); }
+    .notification.warning { border-color: var(--warning); }
+    .notification.info { border-color: var(--info); }
+    .notification-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .notification-title { font-size: 14px; font-weight: 600; }
+    .notification-time { font-size: 11px; color: var(--text-muted); }
+    .notification-body { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .notification-approver { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+    .notification-approver svg { width: 16px; height: 16px; }
+    
+    /* Profile */
+    .profile-header { text-align: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 20px; color: white; margin-bottom: 20px; }
+    .profile-avatar { width: 80px; height: 80px; background: white; border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: var(--primary); }
+    .profile-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .profile-role { font-size: 13px; opacity: 0.9; }
+    .profile-code { background: rgba(255,255,255,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; margin-top: 10px; display: inline-block; }
+    
+    /* Admin Stats */
+    .admin-stats { display: grid; grid-template-cols: 2fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .admin-stat { background: white; border-radius: 16px; padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .admin-stat.large { grid-row: span 2; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+    .admin-stat .value { font-size: 36px; font-weight: 700; }
+    .admin-stat.large .value { font-size: 48px; }
+    .admin-stat .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .admin-stat.large .label { color: rgba(255,255,255,0.8); }
+    
+    /* Request Card */
+    .request-card { background: white; border-radius: 16px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden; }
+    .request-header { padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .request-avatar { width: 48px; height: 48px; background: var(--primary-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); }
+    .request-info { flex: 1; }
+    .request-name { font-size: 15px; font-weight: 600; }
+    .request-meta { font-size: 12px; color: var(--text-muted); }
+    .request-body { padding: 0 16px 16px; display: none; }
+    .request-card.expanded .request-body { display: block; }
+    .request-detail { background: var(--bg-secondary); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+    .request-detail-title { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    .request-detail-value { font-size: 14px; }
+    .request-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .request-actions .btn { flex: 1; }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 300;
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeIn 0.3s ease-out; }
+    
+    /* Hide scrollbar */
+    ::-webkit-scrollbar { display: none; }
+    body { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app"></div>
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    // App State
+    const state = {
+      user: null,
+      currentView: 'login',
+      activeTab: 'home',
+      adminTab: 'dashboard'
+    };
+
+    // Data
+    const students = [
+      { id: 1, name: 'Carlos Martinez', code: '2020-1234', email: 'carlos@universidad.edu', career: 'Ingenieria de Sistemas', progress: 50, pending: 5, approved: 5, inProgress: 2 },
+      { id: 2, name: 'Ana Rodriguez', code: '2020-5678', email: 'ana@universidad.edu', career: 'Derecho', progress: 75, pending: 2, approved: 7, inProgress: 1 },
+      { id: 3, name: 'Luis Perez', code: '2019-9012', email: 'luis@universidad.edu', career: 'Medicina', progress: 30, pending: 7, approved: 3, inProgress: 0 }
+    ];
+
+    const requirements = [
+      { id: 1, name: 'Paz y Salvo Biblioteca', status: 'approved', approver: 'Dr. Roberto Gonzalez', approverRole: 'Director de Biblioteca', date: '2024-01-15' },
+      { id: 2, name: 'Paz y Salvo Financiero', status: 'approved', approver: 'Lic. Maria Torres', approverRole: 'Directora Financiera', date: '2024-01-18' },
+      { id: 3, name: 'Registro de Titulo de Tesis', status: 'in-progress', date: '2024-01-20' },
+      { id: 4, name: 'Aprobacion del Proyecto', status: 'in-progress', date: '2024-01-22' },
+      { id: 5, name: 'Nombramiento de Jurados', status: 'pending' },
+      { id: 6, name: 'Sustentacion de Tesis', status: 'pending' },
+      { id: 7, name: 'Acta de Grado', status: 'pending' },
+      { id: 8, name: 'Ceremonia de Graduacion', status: 'pending' }
+    ];
+
+    const notifications = [
+      { id: 1, type: 'success', title: 'Paz y Salvo Aprobado', message: 'Tu paz y salvo de biblioteca ha sido aprobado exitosamente.', approver: 'Dr. Roberto Gonzalez', approverRole: 'Director de Biblioteca', time: 'Hace 2 horas', unread: true },
+      { id: 2, type: 'info', title: 'Documento Recibido', message: 'Hemos recibido tu registro de titulo de tesis. Esta en revision.', time: 'Hace 1 dia', unread: true },
+      { id: 3, type: 'warning', title: 'Recordatorio', message: 'Tienes 5 dias para entregar la documentacion del proyecto de grado.', time: 'Hace 2 dias', unread: false },
+      { id: 4, type: 'success', title: 'Paz y Salvo Financiero', message: 'Tu paz y salvo financiero ha sido aprobado.', approver: 'Lic. Maria Torres', approverRole: 'Directora Financiera', time: 'Hace 3 dias', unread: false }
+    ];
+
+    const documents = [
+      { id: 1, name: 'Formulario de Inscripcion', type: 'form', category: 'Formularios' },
+      { id: 2, name: 'Guia de Tesis', type: 'guide', category: 'Guias' },
+      { id: 3, name: 'Reglamento de Grado', type: 'norm', category: 'Normativas' },
+      { id: 4, name: 'Formato APA', type: 'template', category: 'Plantillas' }
+    ];
+
+    const myDocuments = [
+      { id: 1, name: 'Paz y Salvo Biblioteca.pdf', date: '15 Ene 2024', status: 'approved' },
+      { id: 2, name: 'Certificado Notas.pdf', date: '18 Ene 2024', status: 'approved' },
+      { id: 3, name: 'Borrador Tesis.docx', date: '20 Ene 2024', status: 'pending' }
+    ];
+
+    const pendingRequests = [
+      { id: 1, student: students[0], type: 'Paz y Salvo Academico', date: '2024-01-25', documents: ['Certificado de notas', 'Historial academico'] },
+      { id: 2, student: students[1], type: 'Aprobacion de Titulo', date: '2024-01-24', documents: ['Propuesta de titulo', 'Carta de director'] },
+      { id: 3, student: students[2], type: 'Nombramiento de Jurados', date: '2024-01-23', documents: ['Borrador de tesis', 'Perfil de jurados'] }
+    ];
+
+    // Icons
+    const icons = {
+      graduation: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+      home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+      checklist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+      folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+      bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+      user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+      download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+      file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+      logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+      settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      userCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>'
+    };
+
+    // Utility Functions
+    function $(selector) { return document.querySelector(selector); }
+    function $$(selector) { return document.querySelectorAll(selector); }
+    
+    function showToast(message) {
+      const toast = $('#toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function getStatusClass(status) {
+      return status === 'approved' ? 'success' : status === 'in-progress' ? 'warning' : 'info';
+    }
+
+    function getStatusText(status) {
+      return status === 'approved' ? 'Aprobado' : status === 'in-progress' ? 'En Proceso' : 'Pendiente';
+    }
+
+    // Render Functions
+    function render() {
+      const app = $('#app');
+      if (!state.user) {
+        app.innerHTML = renderLogin();
+      } else if (state.user.role === 'admin') {
+        app.innerHTML = renderAdminApp();
+      } else {
+        app.innerHTML = renderStudentApp();
+      }
+      attachEvents();
+    }
+
+    function renderLogin() {
+      return `
+        <div class="login-container">
+          <div class="login-header">
+            <div class="login-logo">${icons.graduation}</div>
+            <h1>Gradify</h1>
+            <p>Gestion del Proceso de Grado</p>
+          </div>
+          <div class="login-form">
+            <div class="login-tabs">
+              <button class="login-tab active" data-role="student">Estudiante</button>
+              <button class="login-tab" data-role="admin">Director</button>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Correo Institucional</label>
+              <input type="email" class="form-input" id="email" placeholder="correo@universidad.edu">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contrasena</label>
+              <input type="password" class="form-input" id="password" placeholder="********">
+            </div>
+            <button class="btn btn-primary btn-block" id="loginBtn">Iniciar Sesion</button>
+            <p style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+              Demo: cualquier correo/contrasena
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStudentApp() {
+      return `
+        <div class="header">
+          <h1><div class="header-icon">${icons.graduation}</div> Gradify</h1>
+          <div class="header-actions">
+            <button class="header-btn" data-action="notifications">
+              ${icons.bell}
+              <span class="badge">3</span>
+            </button>
+          </div>
+        </div>
+        <div class="content animate-in">
+          ${state.activeTab === 'home' ? renderDashboard() : ''}
+          ${state.activeTab === 'checklist' ? renderChecklist() : ''}
+          ${state.activeTab === 'docs' ? renderDocuments() : ''}
+          ${state.activeTab === 'alerts' ? renderNotifications() : ''}
+          ${state.activeTab === 'profile' ? renderProfile() : ''}
+        </div>
+        <nav class="bottom-nav">
+          <button class="nav-item ${state.activeTab === 'home' ? 'active' : ''}" data-tab="home">
+            ${icons.home}<span>Inicio</span>
+          </button>
+          <button class="nav-item ${state.activeTab === 'checklist' ? 'active' : ''}" data-tab="checklist">
+            ${icons.checklist}<span>Requisitos</span>
+          </button>
+          <button class="nav-item ${state.activeTab === 'docs' ? 'active' : ''}" data-tab="docs">
+            ${icons.folder}<span>Docs</span>
+          </button>
+          <button class="nav-item ${state.activeTab === 'alerts' ? 'active' : ''}" data-tab="alerts">
+            ${icons.bell}<span>Alertas</span>
+          </button>
+          <button class="nav-item ${state.activeTab === 'profile' ? 'active' : ''}" data-tab="profile">
+            ${icons.user}<span>Perfil</span>
+          </button>
+        </nav>
+      `;
+    }
+
+    function renderAdminApp() {
+      return `
+        <div class="header">
+          <h1><div class="header-icon">${icons.graduation}</div> Gradify Admin</h1>
+          <div class="header-actions">
+            <button class="header-btn" data-action="notifications">
+              ${icons.bell}
+              <span class="badge">5</span>
+            </button>
+          </div>
+        </div>
+        <div class="content animate-in">
+          ${state.adminTab === 'dashboard' ? renderAdminDashboard() : ''}
+          ${state.adminTab === 'students' ? renderAdminStudents() : ''}
+          ${state.adminTab === 'requests' ? renderAdminRequests() : ''}
+          ${state.adminTab === 'profile' ? renderAdminProfile() : ''}
+        </div>
+        <nav class="bottom-nav">
+          <button class="nav-item ${state.adminTab === 'dashboard' ? 'active' : ''}" data-admin-tab="dashboard">
+            ${icons.home}<span>Panel</span>
+          </button>
+          <button class="nav-item ${state.adminTab === 'students' ? 'active' : ''}" data-admin-tab="students">
+            ${icons.users}<span>Estudiantes</span>
+          </button>
+          <button class="nav-item ${state.adminTab === 'requests' ? 'active' : ''}" data-admin-tab="requests">
+            ${icons.inbox}<span>Solicitudes</span>
+          </button>
+          <button class="nav-item ${state.adminTab === 'profile' ? 'active' : ''}" data-admin-tab="profile">
+            ${icons.user}<span>Perfil</span>
+          </button>
+        </nav>
+      `;
+    }
+
+    function renderDashboard() {
+      const approved = requirements.filter(r => r.status === 'approved').length;
+      const inProgress = requirements.filter(r => r.status === 'in-progress').length;
+      const pending = requirements.filter(r => r.status === 'pending').length;
+      const progress = Math.round((approved / requirements.length) * 100);
+      const circumference = 2 * Math.PI * 36;
+      const offset = circumference - (progress / 100) * circumference;
+
+      return `
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 24px; font-weight: 700;">Hola, Carlos</h2>
+          <p style="color: var(--text-muted); font-size: 14px;">Aqui esta tu progreso de grado</p>
+        </div>
+        
+        <div class="card">
+          <div class="progress-ring">
+            <div class="progress-circle">
+              <svg width="80" height="80">
+                <circle class="bg" cx="40" cy="40" r="36"/>
+                <circle class="fill" cx="40" cy="40" r="36" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/>
+              </svg>
+              <div class="progress-text">${progress}%</div>
+            </div>
+            <div class="progress-info">
+              <h3>Progreso General</h3>
+              <p>${approved} de ${requirements.length} requisitos completados</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card success">
+            <div class="stat-value">${approved}</div>
+            <div class="stat-label">Aprobados</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-value">${inProgress}</div>
+            <div class="stat-label">En Proceso</div>
+          </div>
+          <div class="stat-card info">
+            <div class="stat-value">${pending}</div>
+            <div class="stat-label">Pendientes</div>
+          </div>
+        </div>
+
+        <div class="section-title">Actividad Reciente</div>
+        ${requirements.slice(0, 4).map(req => `
+          <div class="list-item">
+            <div class="list-icon ${getStatusClass(req.status)}">
+              ${req.status === 'approved' ? icons.check : req.status === 'in-progress' ? icons.clock : icons.alert}
+            </div>
+            <div class="list-content">
+              <div class="list-title">${req.name}</div>
+              <div class="list-subtitle">${getStatusText(req.status)}</div>
+            </div>
+            ${req.date ? `<div class="list-meta">${req.date}</div>` : ''}
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderChecklist() {
+      return `
+        <div class="section-title">Requisitos de Grado</div>
+        <div class="tabs">
+          <button class="tab active">Todos</button>
+          <button class="tab">Aprobados</button>
+          <button class="tab">En Proceso</button>
+          <button class="tab">Pendientes</button>
+        </div>
+        ${requirements.map(req => `
+          <div class="list-item">
+            <div class="list-icon ${getStatusClass(req.status)}">
+              ${req.status === 'approved' ? icons.check : req.status === 'in-progress' ? icons.clock : icons.alert}
+            </div>
+            <div class="list-content">
+              <div class="list-title">${req.name}</div>
+              <div class="list-subtitle">${getStatusText(req.status)}${req.approver ? ` - ${req.approver}` : ''}</div>
+            </div>
+            <span class="status-badge ${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderDocuments() {
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div class="section-title" style="margin-bottom: 0;">Centro de Documentos</div>
+          <button class="btn btn-primary btn-sm" id="uploadBtn">${icons.upload} Subir</button>
+        </div>
+        
+        <div class="tabs">
+          <button class="tab active">Mis Docs</button>
+          <button class="tab">Formularios</button>
+          <button class="tab">Guias</button>
+          <button class="tab">Plantillas</button>
+        </div>
+
+        <div class="section-subtitle">Documentos Subidos</div>
+        ${myDocuments.map(doc => `
+          <div class="list-item">
+            <div class="list-icon primary">${icons.file}</div>
+            <div class="list-content">
+              <div class="list-title">${doc.name}</div>
+              <div class="list-subtitle">${doc.date}</div>
+            </div>
+            <span class="status-badge ${getStatusClass(doc.status)}">${getStatusText(doc.status)}</span>
+          </div>
+        `).join('')}
+
+        <div class="section-title" style="margin-top: 24px;">Documentos Disponibles</div>
+        ${documents.map(doc => `
+          <div class="list-item">
+            <div class="list-icon info">${icons.file}</div>
+            <div class="list-content">
+              <div class="list-title">${doc.name}</div>
+              <div class="list-subtitle">${doc.category}</div>
+            </div>
+            <button class="btn btn-outline btn-sm">${icons.download}</button>
+          </div>
+        `).join('')}
+
+        <div class="modal-overlay" id="uploadModal">
+          <div class="modal">
+            <div class="modal-header">
+              <div class="modal-title">Subir Documento</div>
+              <button class="modal-close" id="closeUpload">${icons.x}</button>
+            </div>
+            <div class="upload-area" id="dropZone">
+              ${icons.upload}
+              <p>Arrastra archivos aqui o <span>selecciona</span></p>
+              <p style="font-size: 12px; margin-top: 8px;">PDF, DOC, DOCX (Max 10MB)</p>
+            </div>
+            <input type="file" id="fileInput" style="display: none;" accept=".pdf,.doc,.docx">
+            <div class="form-group">
+              <label class="form-label">Tipo de Documento</label>
+              <select class="form-input">
+                <option>Paz y Salvo</option>
+                <option>Certificado</option>
+                <option>Borrador de Tesis</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-block" id="confirmUpload">Subir Documento</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderNotifications() {
+      return `
+        <div class="section-title">Notificaciones</div>
+        <div class="tabs">
+          <button class="tab active">Todas</button>
+          <button class="tab">Sin Leer</button>
+        </div>
+        ${notifications.map(notif => `
+          <div class="notification ${notif.type}">
+            <div class="notification-header">
+              <div class="notification-title">${notif.title}</div>
+              <div class="notification-time">${notif.time}</div>
+            </div>
+            <div class="notification-body">${notif.message}</div>
+            ${notif.approver ? `
+              <div class="notification-approver">
+                ${icons.userCheck}
+                <span><strong>Aprobado por:</strong> ${notif.approver} - ${notif.approverRole}</span>
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderProfile() {
+      return `
+        <div class="profile-header">
+          <div class="profile-avatar">CM</div>
+          <div class="profile-name">Carlos Martinez</div>
+          <div class="profile-role">Estudiante - Ingenieria de Sistemas</div>
+          <div class="profile-code">Codigo: 2020-1234</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px;">Informacion Academica</div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Semestre</div>
+              <div class="list-title">10mo Semestre</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Promedio</div>
+              <div class="list-title">4.2 / 5.0</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Creditos Aprobados</div>
+              <div class="list-title">156 / 160</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px;">Contacto</div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Email</div>
+              <div class="list-title">carlos@universidad.edu</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Telefono</div>
+              <div class="list-title">+57 300 123 4567</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-danger btn-block" id="logoutBtn" style="margin-top: 20px;">
+          ${icons.logout} Cerrar Sesion
+        </button>
+      `;
+    }
+
+    function renderAdminDashboard() {
+      return `
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 24px; font-weight: 700;">Panel de Director</h2>
+          <p style="color: var(--text-muted); font-size: 14px;">Bienvenido, Dr. Roberto Gonzalez</p>
+        </div>
+
+        <div class="admin-stats">
+          <div class="admin-stat large">
+            <div class="value">${students.length}</div>
+            <div class="label">Estudiantes Activos</div>
+          </div>
+          <div class="admin-stat">
+            <div class="value" style="color: var(--warning);">${pendingRequests.length}</div>
+            <div class="label">Pendientes</div>
+          </div>
+          <div class="admin-stat">
+            <div class="value" style="color: var(--success);">12</div>
+            <div class="label">Aprobados Hoy</div>
+          </div>
+          <div class="admin-stat">
+            <div class="value" style="color: var(--primary);">2</div>
+            <div class="label">Rechazados</div>
+          </div>
+        </div>
+
+        <div class="section-title">Solicitudes Recientes</div>
+        ${pendingRequests.slice(0, 3).map(req => `
+          <div class="list-item">
+            <div class="list-icon warning">${icons.clock}</div>
+            <div class="list-content">
+              <div class="list-title">${req.student.name}</div>
+              <div class="list-subtitle">${req.type}</div>
+            </div>
+            <span class="status-badge warning">Pendiente</span>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderAdminStudents() {
+      return `
+        <div class="section-title">Estudiantes</div>
+        <div class="form-group">
+          <input type="text" class="form-input" placeholder="Buscar estudiante...">
+        </div>
+        ${students.map(student => `
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+              <div class="profile-avatar" style="width: 48px; height: 48px; font-size: 16px;">${student.name.split(' ').map(n => n[0]).join('')}</div>
+              <div>
+                <div style="font-weight: 600;">${student.name}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${student.code} - ${student.career}</div>
+              </div>
+            </div>
+            <div style="background: var(--bg-secondary); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 8px;">
+              <div style="background: var(--primary); height: 100%; width: ${student.progress}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+              <span>Progreso: ${student.progress}%</span>
+              <span>${student.approved} aprobados, ${student.pending} pendientes</span>
+            </div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderAdminRequests() {
+      return `
+        <div class="section-title">Solicitudes Pendientes</div>
+        <div class="tabs">
+          <button class="tab active">Pendientes (${pendingRequests.length})</button>
+          <button class="tab">Aprobadas</button>
+          <button class="tab">Rechazadas</button>
+        </div>
+        ${pendingRequests.map((req, index) => `
+          <div class="request-card" data-request="${index}">
+            <div class="request-header">
+              <div class="request-avatar">${req.student.name.split(' ').map(n => n[0]).join('')}</div>
+              <div class="request-info">
+                <div class="request-name">${req.student.name}</div>
+                <div class="request-meta">${req.type} - ${req.date}</div>
+              </div>
+              <span class="status-badge warning">Pendiente</span>
+            </div>
+            <div class="request-body">
+              <div class="request-detail">
+                <div class="request-detail-title">Estudiante</div>
+                <div class="request-detail-value">${req.student.name} (${req.student.code})</div>
+              </div>
+              <div class="request-detail">
+                <div class="request-detail-title">Carrera</div>
+                <div class="request-detail-value">${req.student.career}</div>
+              </div>
+              <div class="request-detail">
+                <div class="request-detail-title">Documentos Adjuntos</div>
+                <div class="request-detail-value">${req.documents.join(', ')}</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Comentario (requerido para rechazar)</label>
+                <input type="text" class="form-input" placeholder="Escribe un comentario...">
+              </div>
+              <div class="request-actions">
+                <button class="btn btn-outline" data-action="reject">Rechazar</button>
+                <button class="btn btn-success" data-action="approve">Aprobar</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    function renderAdminProfile() {
+      return `
+        <div class="profile-header">
+          <div class="profile-avatar">RG</div>
+          <div class="profile-name">Dr. Roberto Gonzalez</div>
+          <div class="profile-role">Director de Programa</div>
+          <div class="profile-code">Ingenieria de Sistemas</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px;">Informacion Laboral</div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Cargo</div>
+              <div class="list-title">Director de Programa</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Departamento</div>
+              <div class="list-title">Facultad de Ingenieria</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-content">
+              <div class="list-subtitle">Email</div>
+              <div class="list-title">director@universidad.edu</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px;">Permisos de Administrador</div>
+          <div class="list-item" style="margin-bottom: 8px;">
+            <div class="list-icon success">${icons.check}</div>
+            <div class="list-content">
+              <div class="list-title">Aprobar/Rechazar Solicitudes</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 8px;">
+            <div class="list-icon success">${icons.check}</div>
+            <div class="list-content">
+              <div class="list-title">Ver Todos los Estudiantes</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 8px;">
+            <div class="list-icon success">${icons.check}</div>
+            <div class="list-content">
+              <div class="list-title">Gestionar Documentos</div>
+            </div>
+          </div>
+          <div class="list-item" style="margin-bottom: 0;">
+            <div class="list-icon success">${icons.check}</div>
+            <div class="list-content">
+              <div class="list-title">Generar Reportes</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-danger btn-block" id="logoutBtn" style="margin-top: 20px;">
+          ${icons.logout} Cerrar Sesion
+        </button>
+      `;
+    }
+
+    // Event Handlers
+    function attachEvents() {
+      // Login tabs
+      $$('.login-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          $$('.login-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+        });
+      });
+
+      // Login button
+      const loginBtn = $('#loginBtn');
+      if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+          const activeTab = $('.login-tab.active');
+          const role = activeTab?.dataset.role || 'student';
+          state.user = { role };
+          state.activeTab = 'home';
+          state.adminTab = 'dashboard';
+          render();
+          showToast('Bienvenido a Gradify');
+        });
+      }
+
+      // Navigation tabs
+      $$('.nav-item[data-tab]').forEach(item => {
+        item.addEventListener('click', () => {
+          state.activeTab = item.dataset.tab;
+          render();
+        });
+      });
+
+      // Admin tabs
+      $$('.nav-item[data-admin-tab]').forEach(item => {
+        item.addEventListener('click', () => {
+          state.adminTab = item.dataset.adminTab;
+          render();
+        });
+      });
+
+      // Logout
+      const logoutBtn = $('#logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          state.user = null;
+          render();
+          showToast('Sesion cerrada');
+        });
+      }
+
+      // Upload modal
+      const uploadBtn = $('#uploadBtn');
+      const uploadModal = $('#uploadModal');
+      const closeUpload = $('#closeUpload');
+      const dropZone = $('#dropZone');
+      const fileInput = $('#fileInput');
+      const confirmUpload = $('#confirmUpload');
+
+      if (uploadBtn && uploadModal) {
+        uploadBtn.addEventListener('click', () => uploadModal.classList.add('active'));
+        closeUpload?.addEventListener('click', () => uploadModal.classList.remove('active'));
+        uploadModal.addEventListener('click', (e) => {
+          if (e.target === uploadModal) uploadModal.classList.remove('active');
+        });
+        dropZone?.addEventListener('click', () => fileInput?.click());
+        confirmUpload?.addEventListener('click', () => {
+          uploadModal.classList.remove('active');
+          showToast('Documento subido exitosamente');
+        });
+      }
+
+      // Request cards
+      $$('.request-card').forEach(card => {
+        card.querySelector('.request-header')?.addEventListener('click', () => {
+          card.classList.toggle('expanded');
+        });
+        card.querySelector('[data-action="approve"]')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showToast('Solicitud aprobada');
+          card.remove();
+        });
+        card.querySelector('[data-action="reject"]')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showToast('Solicitud rechazada');
+          card.remove();
+        });
+      });
+    }
+
+    // Initialize
+    render();
+
+    // PWA Install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    // Service Worker (inline for single file)
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+        self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+  </script>
+</body>
+</html>
